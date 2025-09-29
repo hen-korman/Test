@@ -1,0 +1,31 @@
+{
+  "name": "baby-congratulations-webhook",
+  "version": "1.0.0",
+  "description": "Webhook handler for Make.com baby congratulations workflow",
+  "main": "webhook_handler.js",
+  "scripts": {
+    "start": "node webhook_handler.js",
+    "dev": "nodemon webhook_handler.js",
+    "test": "node test_webhook.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "webhook",
+    "make.com",
+    "hibob",
+    "hr",
+    "automation"
+  ],
+  "author": "Your Company",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
