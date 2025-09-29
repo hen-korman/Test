@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎉 Congratulations on Your New Baby!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: #333;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+        
+        .baby-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .form-container {
+            padding: 40px 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .required {
+            color: #e74c3c;
+        }
+        
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="baby-icon">👶</span>
+            <h1>Congratulations!</h1>
+            <p>We're so excited to hear about your new bundle of joy! Please share some details about your little one so we can update our records and ensure you receive all the benefits and support available to you.</p>
+        </div>
+        
+        <div class="form-container">
+            <form id="babyForm">
+                <!-- Employee Information -->
+                <div class="form-group">
+                    <label for="employeeId">Employee ID <span class="required">*</span></label>
+                    <input type="text" id="employeeId" name="employeeId" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="employeeName">Your Full Name <span class="required">*</span></label>
+                    <input type="text" id="employeeName" name="employeeName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="employeeEmail">Your Email <span class="required">*</span></label>
+                    <input type="email" id="employeeEmail" name="employeeEmail" required>
+                </div>
+                
+                <!-- Baby Information -->
+                <div class="form-group">
+                    <label for="babyName">Baby's Full Name <span class="required">*</span></label>
+                    <input type="text" id="babyName" name="babyName" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="babyGender">Gender <span class="required">*</span></label>
+                        <select id="babyGender" name="babyGender" required>
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                            <option value="prefer-not-to-say">Prefer not to say</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="babyBirthDate">Date of Birth <span class="required">*</span></label>
+                        <input type="date" id="babyBirthDate" name="babyBirthDate" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="babyWeight">Birth Weight (optional)</label>
+                        <input type="text" id="babyWeight" name="babyWeight" placeholder="e.g., 7 lbs 5 oz">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="babyLength">Birth Length (optional)</label>
+                        <input type="text" id="babyLength" name="babyLength" placeholder="e.g., 20 inches">
+                    </div>
+                </div>
+                
+                <!-- Additional Information -->
+                <div class="form-group">
+                    <label for="relationship">Relationship to Baby <span class="required">*</span></label>
+                    <select id="relationship" name="relationship" required>
+                        <option value="">Select Relationship</option>
+                        <option value="mother">Mother</option>
+                        <option value="father">Father</option>
+                        <option value="adoptive-parent">Adoptive Parent</option>
+                        <option value="guardian">Guardian</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestMaternityPaternity">Would you like information about maternity/paternity leave benefits?</label>
+                    <select id="requestMaternityPaternity" name="requestMaternityPaternity">
+                        <option value="">Select Option</option>
+                        <option value="yes">Yes, please send information</option>
+                        <option value="no">No, thank you</option>
+                        <option value="already-received">Already received information</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestBenefitsInfo">Would you like information about dependent benefits and coverage?</label>
+                    <select id="requestBenefitsInfo" name="requestBenefitsInfo">
+                        <option value="">Select Option</option>
+                        <option value="yes">Yes, please send information</option>
+                        <option value="no">No, thank you</option>
+                        <option value="already-enrolled">Already enrolled</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="additionalNotes">Additional Notes or Special Requests (optional)</label>
+                    <input type="text" id="additionalNotes" name="additionalNotes" placeholder="Any additional information you'd like to share...">
+                </div>
+                
+                <button type="submit" class="submit-btn">Submit Baby Information</button>
+                
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Submitting your information...</p>
+                </div>
+                
+                <div class="success-message">
+                    <p>🎉 Thank you! Your baby's information has been successfully submitted. Our HR team will be in touch soon with benefits information and next steps.</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Replace this URL with your actual Make.com webhook URL
+        const WEBHOOK_URL = 'YOUR_MAKE_COM_WEBHOOK_URL_HERE';
+        
+        document.getElementById('babyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const submitBtn = form.querySelector('.submit-btn');
+            const loading = form.querySelector('.loading');
+            const successMessage = form.querySelector('.success-message');
+            
+            // Show loading state
+            submitBtn.style.display = 'none';
+            loading.style.display = 'block';
+            
+            // Collect form data
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+            
+            // Add timestamp
+            data.submissionTime = new Date().toISOString();
+            data.formType = 'baby_congratulations';
+            
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    // Show success message
+                    loading.style.display = 'none';
+                    successMessage.style.display = 'block';
+                    form.reset();
+                } else {
+                    throw new Error('Submission failed');
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                alert('There was an error submitting your form. Please try again or contact HR directly.');
+                
+                // Reset UI
+                loading.style.display = 'none';
+                submitBtn.style.display = 'block';
+            }
+        });
+        
+        // Set max date to today for birth date
+        document.getElementById('babyBirthDate').max = new Date().toISOString().split('T')[0];
+    </script>
+</body>
+</html>
