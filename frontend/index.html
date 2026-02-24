@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מנהל משימות</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <h1 class="logo">מנהל משימות</h1>
+        <div class="stats-bar" id="statsBar">
+          <span class="stat-pill open" id="statOpen">פתוח: 0</span>
+          <span class="stat-pill in-progress" id="statInProgress">בעבודה: 0</span>
+          <span class="stat-pill done" id="statDone">הושלם: 0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Quick capture -->
+    <div class="capture-section">
+      <div class="capture-box">
+        <textarea
+          id="captureInput"
+          class="capture-input"
+          placeholder="מה עולה לך בראש? כתוב כאן ולחץ Enter או שלח..."
+          rows="2"
+        ></textarea>
+        <button class="capture-btn" id="captureBtn" onclick="captureTask()">
+          <span id="captureBtnText">שלח</span>
+        </button>
+      </div>
+      <div id="captureResult" class="capture-result hidden"></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="status" data-value="" onclick="setFilter('status', '', this)">הכל</button>
+        <button class="filter-btn" data-filter="status" data-value="open" onclick="setFilter('status', 'open', this)">פתוח</button>
+        <button class="filter-btn" data-filter="status" data-value="in_progress" onclick="setFilter('status', 'in_progress', this)">בעבודה</button>
+        <button class="filter-btn" data-filter="status" data-value="done" onclick="setFilter('status', 'done', this)">הושלם</button>
+      </div>
+      <div class="filter-group">
+        <button class="filter-btn" data-filter="priority" data-value="urgent" onclick="setFilter('priority', 'urgent', this)">דחוף</button>
+        <button class="filter-btn" data-filter="priority" data-value="high" onclick="setFilter('priority', 'high', this)">גבוה</button>
+        <button class="filter-btn" data-filter="priority" data-value="medium" onclick="setFilter('priority', 'medium', this)">בינוני</button>
+        <button class="filter-btn" data-filter="priority" data-value="low" onclick="setFilter('priority', 'low', this)">נמוך</button>
+      </div>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="חפש משימה..." oninput="debounceSearch()" />
+      </div>
+    </div>
+
+    <!-- Task list -->
+    <main class="task-list" id="taskList">
+      <div class="loading">טוען...</div>
+    </main>
+  </div>
+
+  <!-- Edit modal -->
+  <div class="modal-overlay hidden" id="modalOverlay" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>עריכת משימה</h2>
+        <button class="close-btn" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editId" />
+        <div class="form-group">
+          <label>כותרת</label>
+          <input type="text" id="editTitle" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>פירוט</label>
+          <textarea id="editDescription" class="form-input" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>סטטוס</label>
+            <select id="editStatus" class="form-input">
+              <option value="open">פתוח</option>
+              <option value="in_progress">בעבודה</option>
+              <option value="done">הושלם</option>
+              <option value="cancelled">בוטל</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>עדיפות</label>
+            <select id="editPriority" class="form-input">
+              <option value="low">נמוכה</option>
+              <option value="medium">בינונית</option>
+              <option value="high">גבוהה</option>
+              <option value="urgent">דחוף</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>קטגוריה</label>
+            <select id="editCategory" class="form-input">
+              <option value="work">עבודה</option>
+              <option value="personal">אישי</option>
+              <option value="idea">רעיון</option>
+              <option value="reminder">תזכורת</option>
+              <option value="shopping">קניות</option>
+              <option value="health">בריאות</option>
+              <option value="finance">כספים</option>
+              <option value="other">אחר</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>תגיות (מופרדות בפסיק)</label>
+          <input type="text" id="editTags" class="form-input" placeholder="למשל: דחוף, פגישה, לבדוק" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="saveTask()">שמור</button>
+        <button class="btn btn-danger" onclick="deleteTask()">מחק</button>
+        <button class="btn btn-secondary" onclick="closeModal()">ביטול</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
