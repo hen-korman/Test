@@ -58,6 +58,33 @@ export interface SlackUserGroup {
   userCount: number;
 }
 
+export interface SlackChannel {
+  id: string;
+  name: string;
+  topic?: string;
+  purpose?: string;
+  memberCount: number;
+  isPrivate: boolean;
+}
+
+export type TargetType = 'channel' | 'usergroup';
+
+export interface CreateTargetRequest {
+  targetType: TargetType;
+  name: string;
+  handle?: string;
+  description?: string;
+  criteriaGroup: CriteriaGroup;
+  isPrivate?: boolean;
+}
+
+export interface BulkAddRequest {
+  targetType: TargetType;
+  targetId: string;
+  targetName: string;
+  criteriaGroup: CriteriaGroup;
+}
+
 export interface SavedTemplate {
   id: string;
   name: string;
@@ -67,13 +94,28 @@ export interface SavedTemplate {
   updatedAt: string;
 }
 
-export interface GroupCreationRequest {
+export interface ScheduledSync {
+  id: string;
   name: string;
-  handle: string;
-  description?: string;
+  targetType: TargetType;
+  targetId: string;
+  targetName: string;
   criteriaGroup: CriteriaGroup;
-  channelName?: string;
-  createChannel: boolean;
+  intervalMinutes: number;
+  enforceExclusive: boolean;
+  enabled: boolean;
+  lastRunAt?: string;
+  lastRunResult?: SyncRunResult;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SyncRunResult {
+  ranAt: string;
+  added: string[];
+  removed: string[];
+  unchanged: number;
+  errors: string[];
 }
 
 export interface ApiResponse<T> {

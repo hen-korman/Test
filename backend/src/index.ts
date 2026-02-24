@@ -7,6 +7,7 @@ import { logger } from './middleware/logger';
 import employeesRoutes from './routes/employees.routes';
 import groupsRoutes from './routes/groups.routes';
 import templatesRoutes from './routes/templates.routes';
+import syncRoutes from './routes/sync.routes';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use(limiter);
 app.use('/api/employees', employeesRoutes);
 app.use('/api/groups', groupsRoutes);
 app.use('/api/templates', templatesRoutes);
+app.use('/api/sync', syncRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({

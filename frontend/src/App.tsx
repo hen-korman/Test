@@ -10,13 +10,14 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Hash, RotateCcw, Sparkles } from 'lucide-react';
+import { Hash, RotateCcw, Sparkles, RefreshCw } from 'lucide-react';
 
 import { Header } from './components/Layout/Header';
 import { FieldPalette } from './components/CriteriaBuilder/FieldPalette';
 import { DropZone } from './components/CriteriaBuilder/DropZone';
 import { EmployeeList } from './components/EmployeePreview/EmployeeList';
 import { CreateGroupModal } from './components/GroupManager/CreateGroupModal';
+import { SyncManager } from './components/GroupManager/SyncManager';
 import { TemplatePanel } from './components/GroupManager/TemplatePanel';
 
 import { fetchFields, matchEmployees, fetchTemplates, fetchHealth } from './api/client';
@@ -47,6 +48,7 @@ export default function App() {
   const [templates, setTemplates] = useState<SavedTemplate[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'mock' | 'error'>('mock');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSyncManager, setShowSyncManager] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -59,25 +61,21 @@ export default function App() {
     async function init() {
       try {
         const health = await fetchHealth();
-        if (health.mockMode?.hibob && health.mockMode?.slack) {
-          setConnectionStatus('mock');
-        } else {
-          setConnectionStatus('connected');
-        }
+        setConnectionStatus(
+          health.mockMode?.hibob && health.mockMode?.slack ? 'mock' : 'connected'
+        );
       } catch {
         setConnectionStatus('error');
       }
 
       try {
-        const f = await fetchFields();
-        setFields(f);
+        setFields(await fetchFields());
       } catch {
         setFields([]);
       }
 
       try {
-        const t = await fetchTemplates();
-        setTemplates(t);
+        setTemplates(await fetchTemplates());
       } catch {
         setTemplates([]);
       }
@@ -85,35 +83,32 @@ export default function App() {
     init();
   }, []);
 
-  const runMatch = useCallback(
-    async (group: CriteriaGroup) => {
-      if (group.criteria.length === 0) {
-        setMatchedEmployees([]);
-        setTotalEmployees(0);
-        return;
-      }
+  const runMatch = useCallback(async (group: CriteriaGroup) => {
+    if (group.criteria.length === 0) {
+      setMatchedEmployees([]);
+      setTotalEmployees(0);
+      return;
+    }
 
-      const hasValues = group.criteria.every((c) => {
-        if (c.operator === 'is_empty' || c.operator === 'is_not_empty') return true;
-        if (Array.isArray(c.value)) return c.value.length > 0;
-        return c.value !== '';
-      });
-      if (!hasValues) return;
+    const hasValues = group.criteria.every((c) => {
+      if (c.operator === 'is_empty' || c.operator === 'is_not_empty') return true;
+      if (Array.isArray(c.value)) return c.value.length > 0;
+      return c.value !== '';
+    });
+    if (!hasValues) return;
 
-      setIsMatching(true);
-      setMatchError(undefined);
-      try {
-        const result = await matchEmployees(group);
-        setMatchedEmployees(result.matched);
-        setTotalEmployees(result.totalEmployees);
-      } catch (err: any) {
-        setMatchError(err.message || 'Failed to match employees');
-      } finally {
-        setIsMatching(false);
-      }
-    },
-    []
-  );
+    setIsMatching(true);
+    setMatchError(undefined);
+    try {
+      const result = await matchEmployees(group);
+      setMatchedEmployees(result.matched);
+      setTotalEmployees(result.totalEmployees);
+    } catch (err: any) {
+      setMatchError(err.message || 'Failed to match employees');
+    } finally {
+      setIsMatching(false);
+    }
+  }, []);
 
   const debouncedMatch = useCallback(
     (group: CriteriaGroup) => {
@@ -130,10 +125,8 @@ export default function App() {
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveDragId(null);
     const { active, over } = event;
-
     if (!over) return;
 
-    // Dropping a new field from the palette
     if (active.data.current?.type === 'field') {
       const field = active.data.current.field as HiBobField;
       const newCriterion: Criterion = {
@@ -153,7 +146,6 @@ export default function App() {
       return;
     }
 
-    // Reordering existing criteria
     if (active.id !== over.id) {
       const oldIndex = criteriaGroup.criteria.findIndex((c) => c.id === active.id);
       const newIndex = criteriaGroup.criteria.findIndex((c) => c.id === over.id);
@@ -196,32 +188,27 @@ export default function App() {
   };
 
   const handleClearAll = () => {
-    const newGroup = { ...criteriaGroup, criteria: [] };
-    setCriteriaGroup(newGroup);
+    setCriteriaGroup({ ...criteriaGroup, criteria: [] });
     setMatchedEmployees([]);
     setTotalEmployees(0);
   };
 
   const handleLoadTemplate = (templateCriteriaGroup: CriteriaGroup) => {
-    setCriteriaGroup({
-      ...templateCriteriaGroup,
-      id: 'main',
-    });
+    setCriteriaGroup({ ...templateCriteriaGroup, id: 'main' });
     runMatch(templateCriteriaGroup);
   };
 
   const handleRefreshTemplates = async () => {
     try {
-      const t = await fetchTemplates();
-      setTemplates(t);
-    } catch {
-      /* silent */
-    }
+      setTemplates(await fetchTemplates());
+    } catch { /* silent */ }
   };
 
   const activeField = activeDragId?.startsWith('field-')
     ? fields.find((f) => `field-${f.id}` === activeDragId)
     : null;
+
+  const slackMemberCount = matchedEmployees.filter((e) => e.slackId).length;
 
   return (
     <div className="h-screen flex flex-col bg-slate-50">
@@ -267,16 +254,27 @@ export default function App() {
                 <RotateCcw className="w-3.5 h-3.5" />
                 Clear All
               </button>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                disabled={matchedEmployees.length === 0}
-                className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white
-                  text-sm font-semibold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300
-                  disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all active:scale-95"
-              >
-                <Sparkles className="w-4 h-4" />
-                Create Slack Group ({matchedEmployees.filter((e) => e.slackId).length})
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowSyncManager(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 border border-emerald-300 text-emerald-600 text-sm font-medium rounded-xl hover:bg-emerald-50 transition-all active:scale-95"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Sync Schedule
+                </button>
+
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  disabled={matchedEmployees.length === 0}
+                  className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white
+                    text-sm font-semibold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all active:scale-95"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Add to Slack ({slackMemberCount})
+                </button>
+              </div>
             </div>
           </main>
 
@@ -306,6 +304,13 @@ export default function App() {
         onClose={() => setShowCreateModal(false)}
         criteriaGroup={criteriaGroup}
         matchedEmployees={matchedEmployees}
+      />
+
+      <SyncManager
+        isOpen={showSyncManager}
+        onClose={() => setShowSyncManager(false)}
+        criteriaGroup={criteriaGroup}
+        matchedCount={slackMemberCount}
       />
     </div>
   );
