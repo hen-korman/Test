@@ -1,13 +1,16 @@
 # Dynamic Slack Group Builder
 
-Build and manage Slack user groups dynamically based on employee criteria from HiBob HR system. Features a drag-and-drop interface for creating group rules.
+Build and manage Slack channels and user groups dynamically based on employee criteria from HiBob HR system. Features a drag-and-drop interface for creating group rules, bulk-adding to existing targets, and scheduled membership enforcement.
 
 ## Features
 
-- **Drag & Drop Criteria Builder** — Drag employee fields from HiBob to build dynamic group rules
+- **Drag & Drop Criteria Builder** — Drag employee fields from HiBob to build dynamic rules
 - **Real-time Employee Preview** — See matching employees as you build criteria
 - **AND/OR Logic** — Combine criteria with AND or OR operators
-- **Slack Group Creation** — Create Slack user groups and channels directly
+- **Channels & User Groups** — Create either Slack channels or user groups
+- **Bulk Add to Existing** — Add query results to any existing channel or user group
+- **Scheduled Sync** — Automatically enforce membership based on criteria on a schedule
+- **Exclusive Mode** — Optionally remove members who no longer match the criteria
 - **Template System** — Save and reuse criteria templates
 - **Mock Mode** — Works without API credentials for demo/development
 
@@ -16,19 +19,19 @@ Build and manage Slack user groups dynamically based on employee criteria from H
 ```
 ├── backend/          # Node.js + Express + TypeScript API
 │   ├── src/
-│   │   ├── routes/       # API endpoints
-│   │   ├── services/     # HiBob, Slack, Criteria, Template services
+│   │   ├── routes/       # API endpoints (employees, groups, sync, templates)
+│   │   ├── services/     # HiBob, Slack, Criteria, Sync, Template services
 │   │   ├── types/        # TypeScript type definitions
-│   │   └── middleware/    # Logger, error handling
-│   └── data/             # Template storage (JSON)
+│   │   └── middleware/    # Logger
+│   └── data/             # Template & sync storage (JSON)
 │
 ├── frontend/         # React + TypeScript + Vite + Tailwind CSS
 │   ├── src/
 │   │   ├── api/          # API client
-│   │   ├── components/   # React components
+│   │   ├── components/
 │   │   │   ├── CriteriaBuilder/  # Drag & drop builder
 │   │   │   ├── EmployeePreview/  # Employee list
-│   │   │   ├── GroupManager/     # Group creation modal + templates
+│   │   │   ├── GroupManager/     # Create/bulk-add modal + sync manager
 │   │   │   ├── Layout/          # Header
 │   │   │   └── common/          # Shared components
 │   │   └── types/        # TypeScript types
@@ -78,33 +81,66 @@ cp backend/.env.example backend/.env
 
 1. Create a [Slack App](https://api.slack.com/apps) with these scopes:
    - `usergroups:read`, `usergroups:write` — manage user groups
-   - `channels:manage` — create channels
+   - `channels:manage`, `channels:read` — create and list channels
+   - `groups:read` — list private channels
+   - `conversations:invite` — invite users to channels
    - `users:read`, `users:read.email` — look up users
 2. Install the app to your workspace
 3. Add `SLACK_BOT_TOKEN` (xoxb-...) and `SLACK_USER_TOKEN` (xoxp-...) to `.env`
 
 ## API Endpoints
 
-| Method | Endpoint               | Description                     |
-| ------ | ---------------------- | ------------------------------- |
-| GET    | `/api/health`          | Health check + mock mode status |
-| GET    | `/api/employees`       | List all employees              |
-| GET    | `/api/employees/fields`| Get available HiBob fields      |
-| POST   | `/api/employees/match` | Match employees by criteria     |
-| GET    | `/api/groups/usergroups` | List Slack user groups        |
-| POST   | `/api/groups/create`   | Create Slack group from criteria|
-| GET    | `/api/templates`       | List saved templates            |
-| POST   | `/api/templates`       | Save a criteria template        |
-| DELETE | `/api/templates/:id`   | Delete a template               |
+| Method | Endpoint                 | Description                             |
+| ------ | ------------------------ | --------------------------------------- |
+| GET    | `/api/health`            | Health check + mock mode status         |
+| GET    | `/api/employees`         | List all employees                      |
+| GET    | `/api/employees/fields`  | Get available HiBob fields              |
+| POST   | `/api/employees/match`   | Match employees by criteria             |
+| GET    | `/api/groups/channels`   | List existing Slack channels            |
+| GET    | `/api/groups/usergroups` | List existing Slack user groups         |
+| POST   | `/api/groups/create`     | Create new channel or user group        |
+| POST   | `/api/groups/bulk-add`   | Bulk add members to existing target     |
+| GET    | `/api/sync`              | List scheduled syncs                    |
+| POST   | `/api/sync`              | Create a new scheduled sync             |
+| PUT    | `/api/sync/:id`          | Update sync (enable/disable, interval)  |
+| DELETE | `/api/sync/:id`          | Delete a scheduled sync                 |
+| POST   | `/api/sync/:id/run`      | Manually trigger a sync now             |
+| GET    | `/api/templates`         | List saved templates                    |
+| POST   | `/api/templates`         | Save a criteria template                |
+| DELETE | `/api/templates/:id`     | Delete a template                       |
 
 ## How It Works
+
+### Building Criteria
 
 1. **Select fields** from the left panel (Department, Site, Team, etc.)
 2. **Drag & drop** fields into the criteria builder
 3. **Configure rules** — set operators (equals, contains, etc.) and values
 4. **Preview matches** — see matching employees in real-time on the right
-5. **Create group** — click to create a Slack user group with matched employees
-6. **Save templates** — save criteria for reuse
+
+### Creating a Channel or Group
+
+1. Click **"Add to Slack"** when you have matching employees
+2. Choose **"Create New"** tab
+3. Select **Channel** or **User Group**
+4. Name it, and all matching employees with Slack IDs are added
+
+### Bulk Adding to Existing
+
+1. Click **"Add to Slack"** → switch to **"Add to Existing"** tab
+2. Select an existing channel or user group
+3. All matching employees are bulk-added to the target
+
+### Scheduled Sync (Membership Enforcement)
+
+1. Click **"Sync Schedule"** button
+2. Create a new sync with:
+   - A target channel or user group
+   - The current criteria (linked at creation time)
+   - An interval (5 min to 24 hours)
+   - Optional **exclusive mode** (removes members who don't match)
+3. The system automatically checks and enforces membership on schedule
+4. Manually trigger with **"Run now"** button
 
 ## Tech Stack
 
