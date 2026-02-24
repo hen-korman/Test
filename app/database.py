@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, Boolean, Enum
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, Boolean, Enum, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -52,6 +52,17 @@ class Task(Base):
     due_date = Column(DateTime, nullable=True)
     tags = Column(String(500), nullable=True)  # comma-separated
     ai_summary = Column(Text, nullable=True)
+    reminded_at = Column(DateTime, nullable=True)
+
+
+class Subscription(Base):
+    """Telegram chat IDs subscribed to daily digest and reminders."""
+    __tablename__ = "subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    chat_id = Column(String(50), unique=True, nullable=False)
+    daily_digest = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 def get_db():
@@ -64,3 +75,14 @@ def get_db():
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Add columns for users upgrading from older schema
+    with engine.connect() as conn:
+        for stmt in [
+            "ALTER TABLE tasks ADD COLUMN reminded_at DATETIME",
+            "ALTER TABLE tasks ADD COLUMN due_date DATETIME",
+        ]:
+            try:
+                conn.execute(text(stmt))
+                conn.commit()
+            except Exception:
+                pass  # Column already exists

@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>מנהל משימות</title>
   <link rel="stylesheet" href="/static/style.css" />
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/static/icon.svg" />
 </head>
 <body>
   <div class="app">
@@ -12,10 +18,16 @@
     <header class="header">
       <div class="header-inner">
         <h1 class="logo">מנהל משימות</h1>
-        <div class="stats-bar" id="statsBar">
-          <span class="stat-pill open" id="statOpen">פתוח: 0</span>
-          <span class="stat-pill in-progress" id="statInProgress">בעבודה: 0</span>
-          <span class="stat-pill done" id="statDone">הושלם: 0</span>
+        <div class="header-actions">
+          <div class="stats-bar">
+            <span class="stat-pill open" id="statOpen">פתוח: 0</span>
+            <span class="stat-pill in-progress" id="statInProgress">בעבודה: 0</span>
+            <span class="stat-pill done" id="statDone">הושלם: 0</span>
+          </div>
+          <div class="view-toggle">
+            <button class="view-btn active" id="btnList" onclick="setView('list')">≡ רשימה</button>
+            <button class="view-btn" id="btnKanban" onclick="setView('kanban')">⊞ Kanban</button>
+          </div>
         </div>
       </div>
     </header>
@@ -26,7 +38,7 @@
         <textarea
           id="captureInput"
           class="capture-input"
-          placeholder="מה עולה לך בראש? כתוב כאן ולחץ Enter או שלח..."
+          placeholder="מה עולה לך בראש? כתוב כאן ולחץ Enter..."
           rows="2"
         ></textarea>
         <button class="capture-btn" id="captureBtn" onclick="captureTask()">
@@ -36,8 +48,8 @@
       <div id="captureResult" class="capture-result hidden"></div>
     </div>
 
-    <!-- Filters -->
-    <div class="filters">
+    <!-- Filters (list view only) -->
+    <div class="filters" id="filters">
       <div class="filter-group">
         <button class="filter-btn active" data-filter="status" data-value="" onclick="setFilter('status', '', this)">הכל</button>
         <button class="filter-btn" data-filter="status" data-value="open" onclick="setFilter('status', 'open', this)">פתוח</button>
@@ -45,20 +57,48 @@
         <button class="filter-btn" data-filter="status" data-value="done" onclick="setFilter('status', 'done', this)">הושלם</button>
       </div>
       <div class="filter-group">
-        <button class="filter-btn" data-filter="priority" data-value="urgent" onclick="setFilter('priority', 'urgent', this)">דחוף</button>
-        <button class="filter-btn" data-filter="priority" data-value="high" onclick="setFilter('priority', 'high', this)">גבוה</button>
-        <button class="filter-btn" data-filter="priority" data-value="medium" onclick="setFilter('priority', 'medium', this)">בינוני</button>
-        <button class="filter-btn" data-filter="priority" data-value="low" onclick="setFilter('priority', 'low', this)">נמוך</button>
+        <button class="filter-btn" data-filter="priority" data-value="urgent" onclick="setFilter('priority', 'urgent', this)">🔴 דחוף</button>
+        <button class="filter-btn" data-filter="priority" data-value="high" onclick="setFilter('priority', 'high', this)">🟠 גבוה</button>
+        <button class="filter-btn" data-filter="priority" data-value="medium" onclick="setFilter('priority', 'medium', this)">🟡 בינוני</button>
+        <button class="filter-btn" data-filter="priority" data-value="low" onclick="setFilter('priority', 'low', this)">🟢 נמוך</button>
       </div>
       <div class="search-box">
         <input type="text" id="searchInput" placeholder="חפש משימה..." oninput="debounceSearch()" />
       </div>
     </div>
 
-    <!-- Task list -->
+    <!-- List view -->
     <main class="task-list" id="taskList">
       <div class="loading">טוען...</div>
     </main>
+
+    <!-- Kanban view (hidden by default) -->
+    <div class="kanban hidden" id="kanbanBoard">
+      <div class="kanban-column" id="col-open"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'open')">
+        <div class="kanban-col-header">
+          <span class="col-dot open"></span> פתוח
+          <span class="col-count" id="countOpen">0</span>
+        </div>
+        <div class="kanban-col-body" id="cards-open"></div>
+      </div>
+      <div class="kanban-column" id="col-in_progress"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'in_progress')">
+        <div class="kanban-col-header">
+          <span class="col-dot in-progress"></span> בעבודה
+          <span class="col-count" id="countInProgress">0</span>
+        </div>
+        <div class="kanban-col-body" id="cards-in_progress"></div>
+      </div>
+      <div class="kanban-column" id="col-done"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'done')">
+        <div class="kanban-col-header">
+          <span class="col-dot done"></span> הושלם
+          <span class="col-count" id="countDone">0</span>
+        </div>
+        <div class="kanban-col-body" id="cards-done"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Edit modal -->
@@ -112,6 +152,10 @@
           </div>
         </div>
         <div class="form-group">
+          <label>תאריך יעד</label>
+          <input type="datetime-local" id="editDueDate" class="form-input" />
+        </div>
+        <div class="form-group">
           <label>תגיות (מופרדות בפסיק)</label>
           <input type="text" id="editTags" class="form-input" placeholder="למשל: דחוף, פגישה, לבדוק" />
         </div>
@@ -125,5 +169,10 @@
   </div>
 
   <script src="/static/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
 </body>
 </html>

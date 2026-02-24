@@ -25,6 +25,15 @@ app.include_router(tasks_router)
 app.include_router(capture_router)
 app.include_router(whatsapp_router)
 
+# PWA files must be served from root scope
+@app.get("/sw.js")
+def serve_sw():
+    return FileResponse(str(FRONTEND_DIR / "sw.js"), media_type="application/javascript")
+
+@app.get("/manifest.json")
+def serve_manifest():
+    return FileResponse(str(FRONTEND_DIR / "manifest.json"), media_type="application/json")
+
 # Serve the frontend index for all non-API routes
 @app.get("/")
 def serve_index():

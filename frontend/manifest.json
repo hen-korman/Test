@@ -1,0 +1,19 @@
+{
+  "name": "מנהל משימות",
+  "short_name": "משימות",
+  "description": "לכידה מהירה של משימות ורעיונות",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#6366f1",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/static/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

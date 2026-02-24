@@ -1,42 +1,20 @@
 """
 Quick capture endpoint — receives raw text, uses AI to classify it, saves as task.
-Used by the Telegram bot, WhatsApp webhook, and the web quick-add bar.
+Used by the web quick-add bar. The Telegram/WhatsApp bots call task_service directly.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 
-from app.database import get_db, Task
-from app.ai_helper import classify_task
+from app.task_service import capture_task
 
 router = APIRouter(prefix="/api/capture", tags=["capture"])
 
 
 class CaptureRequest(BaseModel):
     text: str
-    source: str = "web"  # web / telegram / whatsapp
+    source: str = "web"
 
 
 @router.post("/")
-async def capture(req: CaptureRequest, db: Session = Depends(get_db)):
-    classified = await classify_task(req.text)
-
-    task = Task(
-        title=classified["title"],
-        category=classified["category"],
-        priority=classified["priority"],
-        ai_summary=classified["ai_summary"],
-        source=req.source,
-        status="open",
-    )
-    db.add(task)
-    db.commit()
-    db.refresh(task)
-
-    return {
-        "id": task.id,
-        "title": task.title,
-        "category": task.category,
-        "priority": task.priority,
-        "ai_summary": task.ai_summary,
-    }
+async def capture(req: CaptureRequest):
+    return await capture_task(req.text, req.source)

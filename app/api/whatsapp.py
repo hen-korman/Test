@@ -3,23 +3,18 @@ WhatsApp webhook via Twilio.
 
 Setup:
 1. Create a Twilio account at twilio.com
-2. Enable WhatsApp Sandbox at console.twilio.com/messaging/whatsapp/sandbox
-3. Set the webhook URL to: https://your-server.com/api/whatsapp/webhook
-4. Fill in TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN in .env
+2. Enable WhatsApp Sandbox: console.twilio.com/messaging/whatsapp/sandbox
+3. Set webhook URL: https://your-server.com/api/whatsapp/webhook
+4. Fill TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN in .env
 """
-import os
-import hmac
-import hashlib
-import urllib.parse
 import logging
-from fastapi import APIRouter, Request, Form, HTTPException, Header
+from fastapi import APIRouter, Request, Form, Header
 from fastapi.responses import PlainTextResponse
 
 from app.database import SessionLocal, Task
-from app.ai_helper import classify_task
+from app.task_service import capture_task
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp"])
 
 COMMANDS_HELP = (
@@ -35,20 +30,7 @@ CATEGORY_LABELS = {
     "reminder": "תזכורת", "shopping": "קניות", "health": "בריאות",
     "finance": "כספים", "other": "אחר",
 }
-PRIORITY_EMOJI = {
-    "urgent": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢",
-}
-
-
-def validate_twilio_signature(request_url: str, params: dict, signature: str) -> bool:
-    auth_token = os.getenv("TWILIO_AUTH_TOKEN", "")
-    if not auth_token:
-        return True  # Skip validation if not configured
-    s = request_url + "".join(f"{k}{v}" for k, v in sorted(params.items()))
-    expected = hmac.new(auth_token.encode(), s.encode(), hashlib.sha1).digest()
-    import base64
-    expected_b64 = base64.b64encode(expected).decode()
-    return hmac.compare_digest(expected_b64, signature)
+PRIORITY_EMOJI = {"urgent": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢"}
 
 
 @router.post("/webhook", response_class=PlainTextResponse)
@@ -64,7 +46,6 @@ async def whatsapp_webhook(
 
     lower = text.lower().strip()
 
-    # Commands
     if lower in ("עזרה", "help", "/help"):
         return twiml_reply(COMMANDS_HELP)
 
@@ -76,8 +57,7 @@ async def whatsapp_webhook(
                 return twiml_reply("אין משימות פתוחות!")
             lines = ["משימות פתוחות:"]
             for t in tasks:
-                prio = PRIORITY_EMOJI.get(t.priority, "")
-                lines.append(f"{prio} #{t.id} {t.title}")
+                lines.append(f"{PRIORITY_EMOJI.get(t.priority, '')} #{t.id} {t.title}")
             return twiml_reply("\n".join(lines))
         finally:
             db.close()
@@ -98,28 +78,18 @@ async def whatsapp_webhook(
                 db.close()
 
     # Default: capture as task
-    classified = await classify_task(text)
-    db = SessionLocal()
-    try:
-        task = Task(
-            title=classified["title"],
-            category=classified["category"],
-            priority=classified["priority"],
-            ai_summary=classified["ai_summary"],
-            source="whatsapp",
-            status="open",
-        )
-        db.add(task)
-        db.commit()
-        db.refresh(task)
-        cat = CATEGORY_LABELS.get(task.category, task.category)
-        prio = PRIORITY_EMOJI.get(task.priority, "")
-        reply = f"נשמר! {prio}\n#{task.id} {task.title}\nקטגוריה: {cat}"
-        if task.ai_summary:
-            reply += f"\n{task.ai_summary}"
-        return twiml_reply(reply)
-    finally:
-        db.close()
+    result = await capture_task(text, source="whatsapp")
+    cat = CATEGORY_LABELS.get(result["category"], result["category"])
+    prio = PRIORITY_EMOJI.get(result["priority"], "")
+    reply = f"נשמר! {prio}\n#{result['id']} {result['title']}\nקטגוריה: {cat}"
+    if result.get("ai_summary"):
+        reply += f"\n{result['ai_summary']}"
+    if result.get("due_date"):
+        reply += f"\n⏰ תאריך יעד: {result['due_date'][:16].replace('T', ' ')}"
+    if result.get("duplicate_warning"):
+        dup = result["duplicate_warning"]
+        reply += f"\n⚠️ משימה דומה: #{dup['id']} {dup['title']}"
+    return twiml_reply(reply)
 
 
 def twiml_reply(msg: str) -> str:
