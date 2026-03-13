@@ -21,11 +21,13 @@ const SEL = {
   // A chat row matched by its title span
   chatRow: (name) => `span[title="${name}"]`,
   // The "attach" / "+" button in the message bar
+  // Confirmed via DevTools 2026-03: aria-label="צירוף", data-tab="10", icon="plus-rounded"
   attachBtn: [
+    'button[aria-label="צירוף"]',
     'button[data-tab="10"]',
+    'span[data-icon="plus-rounded"]',
     'span[data-icon="plus"]',
     'button[aria-label="Attach"]',
-    'button[title="Attach"]',
   ],
   // "Event" option inside the attach menu
   eventOption: ["li[data-testid='mi-menuo-event']", "span[data-icon='event']"],
